@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# Claude Code development files
+CLAUDE.md
+
+# Python virtual environment
+venv/
+
+# Duplicate/backup files
+src/middleware 2.ts
+src/lib/supabase 2.ts
