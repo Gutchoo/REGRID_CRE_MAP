@@ -14,6 +14,18 @@ CREATE TABLE properties (
   geometry JSONB, -- GeoJSON polygon data for mapping
   lat DECIMAL(10, 8),
   lng DECIMAL(11, 8),
+  
+  -- Rich property data from Regrid API
+  year_built INTEGER,
+  owner TEXT,
+  last_sale_price DECIMAL(12, 2),
+  sale_date DATE,
+  county TEXT,
+  qoz_status TEXT, -- Qualified Opportunity Zone status
+  improvement_value DECIMAL(12, 2),
+  land_value DECIMAL(12, 2),
+  assessed_value DECIMAL(12, 2),
+  
   property_data JSONB, -- Store full Regrid API response
   user_notes TEXT,
   tags TEXT[],
@@ -60,6 +72,10 @@ CREATE INDEX idx_properties_apn ON properties(apn);
 CREATE INDEX idx_properties_address ON properties(address);
 CREATE INDEX idx_properties_geometry ON properties USING GIN(geometry);
 CREATE INDEX idx_properties_created_at ON properties(created_at);
+CREATE INDEX idx_properties_county ON properties(county);
+CREATE INDEX idx_properties_year_built ON properties(year_built);
+CREATE INDEX idx_properties_owner ON properties(owner);
+CREATE INDEX idx_properties_qoz_status ON properties(qoz_status);
 
 -- 🔍 Address search helper function (with proper UUID handling)
 CREATE OR REPLACE FUNCTION search_properties_by_address(search_term TEXT, user_id_param UUID)

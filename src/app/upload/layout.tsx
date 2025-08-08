@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { MapIcon, TableIcon, SettingsIcon } from 'lucide-react'
 import { UserMenu } from '@/components/user-menu'
 
-export default function DashboardLayout({
+export default function UploadLayout({
   children,
 }: {
   children: React.ReactNode

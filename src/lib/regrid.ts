@@ -1,6 +1,9 @@
 import { z } from 'zod'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 const REGRID_API_BASE = 'https://app.regrid.com/api/v2'
+const TEST_APN = '0254282260000'
 
 export interface RegridProperty {
   id: string
@@ -80,6 +83,26 @@ export class RegridService {
   // Search by APN
   static async searchByAPN(apn: string, state?: string): Promise<RegridProperty | null> {
     try {
+      // Use cached test data for development testing
+      if (apn === TEST_APN && process.env.NODE_ENV === 'development') {
+        console.log(`🧪 Using cached test data for APN: ${TEST_APN}`)
+        
+        try {
+          const testDataPath = join(process.cwd(), 'src', 'lib', 'test-data', `regrid-${TEST_APN}.json`)
+          const testData = JSON.parse(readFileSync(testDataPath, 'utf-8'))
+          
+          // Handle the same API response structure as live API
+          const features = testData?.parcels?.features || []
+          if (features.length > 0) {
+            console.log(`✅ Loaded cached test data for APN: ${TEST_APN}`)
+            return this.normalizeProperty(features[0])
+          }
+        } catch (fileError) {
+          console.warn(`⚠️  Could not load test data for APN ${TEST_APN}, falling back to API:`, fileError.message)
+          // Fall through to regular API call
+        }
+      }
+
       const params: Record<string, any> = { 
         parcelnumb: apn,
         token: this.apiKey 
@@ -190,11 +213,17 @@ export class RegridService {
         property_type: fields.property_type || '',
         use_code: fields.usecode || '',
         use_description: fields.usedesc || '',
-        assessed_value: parseFloat(fields.assessed_value) || undefined,
+        
+        // Enhanced fields for database storage
+        assessed_value: parseFloat(fields.parval) || undefined, // Total parcel value
+        improvement_value: parseFloat(fields.improvval) || undefined,
+        land_value: parseFloat(fields.landval) || undefined,
+        last_sale_price: parseFloat(fields.saleprice) || undefined,
         sale_date: fields.saledate || '',
-        sale_price: parseFloat(fields.saleprice) || undefined,
-        subdivision: fields.subdivision || '',
         county: fields.county || '',
+        qoz_status: fields.qoz || '', // Qualified Opportunity Zone
+        
+        subdivision: fields.subdivision || '',
         qualified_opportunity_zone: fields.qoz || '',
         // Store all raw fields for future use
         ...fields

@@ -31,6 +31,18 @@ export type Property = {
   geometry: Record<string, unknown> | null // GeoJSON polygon
   lat: number | null
   lng: number | null
+  
+  // Rich property data from Regrid API
+  year_built: number | null
+  owner: string | null
+  last_sale_price: number | null
+  sale_date: string | null // ISO date string
+  county: string | null
+  qoz_status: string | null // Qualified Opportunity Zone status
+  improvement_value: number | null
+  land_value: number | null
+  assessed_value: number | null
+  
   property_data: Record<string, unknown> | null // Regrid response data
   user_notes: string | null
   tags: string[] | null

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -34,6 +34,15 @@ interface PropertyPreview {
   owner: string
   lot_size_sqft?: number
   assessed_value?: number
+}
+
+interface DuplicateProperty {
+  id: string
+  address: string
+  city?: string
+  state?: string
+  apn: string
+  created_at: string
 }
 
 const US_STATES = [
@@ -95,6 +104,9 @@ export function APNForm() {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [isDuplicateChecking, setIsDuplicateChecking] = useState(false)
+  const [duplicateProperty, setDuplicateProperty] = useState<DuplicateProperty | null>(null)
+  const [isRecentlyChanged, setIsRecentlyChanged] = useState(false)
   const router = useRouter()
 
   const form = useForm<FormData>({
@@ -109,11 +121,58 @@ export function APNForm() {
   // Watch the APN field for reactive updates
   const apnValue = form.watch('apn')
 
+  // Debounced duplicate checking with timing control
+  useEffect(() => {
+    // Set recently changed flag whenever APN changes
+    setIsRecentlyChanged(true)
+    setDuplicateProperty(null) // Clear previous results
+    
+    const checkForDuplicate = async (apn: string) => {
+      if (!apn || apn.length < 3) {
+        setDuplicateProperty(null)
+        setIsDuplicateChecking(false)
+        setIsRecentlyChanged(false)
+        return
+      }
+
+      setIsDuplicateChecking(true)
+      try {
+        const response = await fetch(`/api/user-properties/check-apn?apn=${encodeURIComponent(apn)}`)
+        const data = await response.json()
+
+        if (response.ok && data.exists) {
+          setDuplicateProperty(data.property)
+        } else {
+          setDuplicateProperty(null)
+        }
+      } catch (error) {
+        console.error('Duplicate check error:', error)
+        // Fail silently - don't block user if duplicate check fails
+        setDuplicateProperty(null)
+      } finally {
+        setIsDuplicateChecking(false)
+        setIsRecentlyChanged(false) // Allow button to be enabled after check completes
+      }
+    }
+
+    const timeoutId = setTimeout(() => {
+      checkForDuplicate(apnValue)
+    }, 500) // 500ms debounce
+
+    return () => clearTimeout(timeoutId)
+  }, [apnValue])
+
   const handleSearch = async () => {
     const apn = form.getValues('apn')
 
     if (!apn) {
       setSearchError('Please enter an APN')
+      return
+    }
+
+    // Prevent search if duplicate is found
+    if (duplicateProperty) {
+      setSearchError('This property already exists in your portfolio')
       return
     }
 
@@ -200,7 +259,16 @@ export function APNForm() {
       setSubmitSuccess(true)
     } catch (error) {
       console.error('Submit error:', error)
-      setSearchError(error instanceof Error ? error.message : 'Failed to add property')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add property'
+      
+      // Special handling for duplicate property errors
+      if (errorMessage.includes('already exists in your portfolio')) {
+        setSearchError('This property is already in your portfolio. Please search for a different APN.')
+        // Clear the property preview since it's a duplicate
+        setPropertyPreview(null)
+      } else {
+        setSearchError(errorMessage)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -262,6 +330,43 @@ export function APNForm() {
                 />
               </FormControl>
               <FormMessage />
+              
+              {/* Duplicate property warning */}
+              {duplicateProperty && (
+                <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-yellow-800">
+                        Property Already Exists
+                      </h3>
+                      <div className="mt-2 text-sm text-yellow-700">
+                        <p>This APN is already in your portfolio:</p>
+                        <p className="font-medium">
+                          {duplicateProperty.address}
+                          {duplicateProperty.city && `, ${duplicateProperty.city}`}
+                          {duplicateProperty.state && `, ${duplicateProperty.state}`}
+                        </p>
+                        <p className="text-xs mt-1">
+                          Added on {new Date(duplicateProperty.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Duplicate checking indicator */}
+              {isDuplicateChecking && apnValue && (
+                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
+                  Checking for duplicates...
+                </div>
+              )}
             </FormItem>
           )}
         />
@@ -271,7 +376,7 @@ export function APNForm() {
             type="button"
             variant="outline"
             onClick={handleSearch}
-            disabled={isSearching || !apnValue}
+            disabled={isSearching || !apnValue || !!duplicateProperty || isDuplicateChecking || isRecentlyChanged}
             className="flex items-center gap-2"
           >
             {isSearching ? (

@@ -104,15 +104,11 @@ async function handleSingleCreate(userId: string, body: unknown) {
 
   let regridData: RegridProperty | null = null
 
-  // Skip Regrid API calls if we have complete data from frontend (APN search results)
-  if (validatedData.regrid_id && validatedData.apn && validatedData.address) {
-    console.log('handleSingleCreate - skipping Regrid API call, using provided data')
-    // We already have the essential data from the frontend search, no need to re-fetch
-    regridData = null // Will use validatedData directly
-  } else if (validatedData.apn) {
+  // Always fetch Regrid data to get rich property information
+  if (validatedData.apn) {
     console.log('handleSingleCreate - fetching by APN:', validatedData.apn)
     regridData = await RegridService.searchByAPN(validatedData.apn, validatedData.state)
-  } else {
+  } else if (validatedData.address) {
     console.log('handleSingleCreate - searching by address')
     // Search by address
     const searchResults = await RegridService.searchByAddress(
@@ -140,6 +136,18 @@ async function handleSingleCreate(userId: string, body: unknown) {
     geometry: regridData?.geometry || null,
     lat: regridData?.centroid?.lat || null,
     lng: regridData?.centroid?.lng || null,
+    
+    // Enhanced property data from Regrid API
+    year_built: regridData?.properties?.year_built || null,
+    owner: regridData?.properties?.owner || null,
+    last_sale_price: regridData?.properties?.last_sale_price || null,
+    sale_date: regridData?.properties?.sale_date || null,
+    county: regridData?.properties?.county || null,
+    qoz_status: regridData?.properties?.qoz_status || null,
+    improvement_value: regridData?.properties?.improvement_value || null,
+    land_value: regridData?.properties?.land_value || null,
+    assessed_value: regridData?.properties?.assessed_value || null,
+    
     property_data: regridData || null,
     user_notes: validatedData.user_notes || null,
     tags: validatedData.tags || null,
@@ -150,6 +158,23 @@ async function handleSingleCreate(userId: string, body: unknown) {
   console.log('handleSingleCreate - property data prepared:', JSON.stringify(propertyData, null, 2))
 
   try {
+    // Server-side duplicate check as additional safeguard
+    if (propertyData.apn) {
+      console.log('handleSingleCreate - checking for duplicate APN:', propertyData.apn)
+      const existingProperties = await DatabaseService.getFilteredProperties(userId, {
+        search: propertyData.apn
+      })
+      
+      const exactMatch = existingProperties.find(
+        property => property.apn?.toLowerCase() === propertyData.apn?.toLowerCase()
+      )
+      
+      if (exactMatch) {
+        console.log('handleSingleCreate - duplicate APN found, rejecting creation')
+        throw new Error('A property with this APN already exists in your portfolio')
+      }
+    }
+    
     console.log('handleSingleCreate - creating property in database')
     const property = await DatabaseService.createProperty(propertyData)
     console.log('handleSingleCreate - property created successfully:', property.id)
@@ -236,6 +261,18 @@ async function createSinglePropertyFromInput(userId: string, input: unknown) {
     geometry: regridData?.geometry || null,
     lat: regridData?.centroid?.lat || null,
     lng: regridData?.centroid?.lng || null,
+    
+    // Enhanced property data from Regrid API
+    year_built: regridData?.properties?.year_built || null,
+    owner: regridData?.properties?.owner || null,
+    last_sale_price: regridData?.properties?.last_sale_price || null,
+    sale_date: regridData?.properties?.sale_date || null,
+    county: regridData?.properties?.county || null,
+    qoz_status: regridData?.properties?.qoz_status || null,
+    improvement_value: regridData?.properties?.improvement_value || null,
+    land_value: regridData?.properties?.land_value || null,
+    assessed_value: regridData?.properties?.assessed_value || null,
+    
     property_data: regridData || null,
     user_notes: validatedInput.user_notes || null,
     tags: validatedInput.tags || null,

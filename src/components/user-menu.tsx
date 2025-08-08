@@ -57,7 +57,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" size="sm" className="relative h-10 w-10 rounded-full p-0">
           <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
             <UserIcon className="h-4 w-4 text-primary-foreground" />
           </div>
