@@ -52,4 +52,6 @@ venv/
 # Duplicate/backup files
 src/middleware 2.ts
 src/lib/supabase 2.ts
-src/lib/test-data/regrid-0254282260000.json
+src/lib/test-data/
+
+*.csv

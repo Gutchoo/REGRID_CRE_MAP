@@ -3,7 +3,18 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 
 const REGRID_API_BASE = 'https://app.regrid.com/api/v2'
-const TEST_APN = '0254282260000'
+
+// Test APNs with cached data to avoid API costs during development
+const TEST_APN_MAPPING: Record<string, string> = {
+  '0254282260000': 'regrid-test-1.json', // Original test APN
+  '50183176': 'regrid-test-2.json',
+  '505090290': 'regrid-test-3.json', 
+  '505210810': 'regrid-test-4.json',
+  '0253204080000': 'regrid-test-5.json',
+  '628081041': 'regrid-test-6.json'
+}
+
+const TEST_APNS = Object.keys(TEST_APN_MAPPING)
 
 export interface RegridProperty {
   id: string
@@ -84,21 +95,22 @@ export class RegridService {
   static async searchByAPN(apn: string, state?: string): Promise<RegridProperty | null> {
     try {
       // Use cached test data for development testing
-      if (apn === TEST_APN && process.env.NODE_ENV === 'development') {
-        console.log(`🧪 Using cached test data for APN: ${TEST_APN}`)
+      if (TEST_APNS.includes(apn) && process.env.NODE_ENV === 'development') {
+        console.log(`🧪 Using cached test data for APN: ${apn}`)
         
         try {
-          const testDataPath = join(process.cwd(), 'src', 'lib', 'test-data', `regrid-${TEST_APN}.json`)
+          const filename = TEST_APN_MAPPING[apn]
+          const testDataPath = join(process.cwd(), 'src', 'lib', 'test-data', filename)
           const testData = JSON.parse(readFileSync(testDataPath, 'utf-8'))
           
           // Handle the same API response structure as live API
           const features = testData?.parcels?.features || []
           if (features.length > 0) {
-            console.log(`✅ Loaded cached test data for APN: ${TEST_APN}`)
+            console.log(`✅ Loaded cached test data for APN: ${apn}`)
             return this.normalizeProperty(features[0])
           }
         } catch (fileError) {
-          console.warn(`⚠️  Could not load test data for APN ${TEST_APN}, falling back to API:`, fileError.message)
+          console.warn(`⚠️  Could not load test data for APN ${apn}, falling back to API:`, fileError.message)
           // Fall through to regular API call
         }
       }

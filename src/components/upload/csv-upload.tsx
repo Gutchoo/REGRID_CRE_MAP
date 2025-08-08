@@ -67,36 +67,46 @@ export function CSVUpload() {
           return
         }
 
-        // Check for required columns
+        // Check for required columns - ONLY APN format supported
         const headers = Object.keys(data[0]).map(h => h.toLowerCase())
         
         let detectedFormat: 'apn' | 'address' | 'unknown' = 'unknown'
 
-        // Check for APN format
-        if (headers.some(h => h.includes('apn') || h.includes('parcel'))) {
+        // Check for APN format - expanded to catch more column variations
+        if (headers.some(h => 
+          h.includes('apn') || 
+          h.includes('parcel') || 
+          h.includes('parcelnumber') || 
+          h.includes('parcel_number') ||
+          h === 'apn' ||
+          h === 'parcel' ||
+          h === 'parcelnumber' ||
+          h === 'parcel_number'
+        )) {
           detectedFormat = 'apn'
-        } 
-        // Check for address format
-        else if (headers.some(h => h.includes('address')) || 
-                 (headers.includes('city') && headers.includes('state'))) {
-          detectedFormat = 'address'
         }
 
         if (detectedFormat === 'unknown') {
-          errors.push('Could not detect valid format. Expected columns: APN, or Address/City/State')
+          errors.push('CSV must contain an APN column. Supported column names: apn, parcel, parcelnumber, parcel_number')
         }
 
-        // Validate data quality
+        // Validate data quality - only check APN format
         if (detectedFormat === 'apn') {
-          const apnColumn = headers.find(h => h.includes('apn') || h.includes('parcel'))
-          const emptyApns = data.filter(row => !row[apnColumn!])
+          const apnColumn = Object.keys(data[0]).find(key => {
+            const h = key.toLowerCase()
+            return h.includes('apn') || 
+                   h.includes('parcel') || 
+                   h.includes('parcelnumber') || 
+                   h.includes('parcel_number') ||
+                   h === 'apn' ||
+                   h === 'parcel' ||
+                   h === 'parcelnumber' ||
+                   h === 'parcel_number'
+          })
+          
+          const emptyApns = data.filter(row => !row[apnColumn!] || String(row[apnColumn!]).trim() === '')
           if (emptyApns.length > 0) {
             errors.push(`${emptyApns.length} rows have empty APN values`)
-          }
-        } else if (detectedFormat === 'address') {
-          const emptyAddresses = data.filter(row => !row.address && !row.Address)
-          if (emptyAddresses.length > 0) {
-            errors.push(`${emptyAddresses.length} rows have empty address values`)
           }
         }
 
@@ -132,34 +142,78 @@ export function CSVUpload() {
         complete: async (parseResults) => {
           const data = parseResults.data as CSVRow[]
           
-          // Transform data based on detected format
+          // Transform data - only APN format supported
           const properties = data.map(row => {
-            if (validation.detectedFormat === 'apn') {
-              const apnKey = Object.keys(row).find(k => 
-                k.toLowerCase().includes('apn') || k.toLowerCase().includes('parcel')
-              )
-              return {
-                apn: row[apnKey!],
-                address: row.address || row.Address || `Property ${row[apnKey!]}` // Fallback address
-              }
-            } else {
-              return {
-                address: row.address || row.Address,
-                city: row.city || row.City,
-                state: row.state || row.State,
-                zip_code: row.zip || row.ZIP || row.zip_code
-              }
+            const apnKey = Object.keys(row).find(key => {
+              const h = key.toLowerCase()
+              return h.includes('apn') || 
+                     h.includes('parcel') || 
+                     h.includes('parcelnumber') || 
+                     h.includes('parcel_number') ||
+                     h === 'apn' ||
+                     h === 'parcel' ||
+                     h === 'parcelnumber' ||
+                     h === 'parcel_number'
+            })
+            
+            const apnValue = row[apnKey!]
+            return {
+              apn: String(apnValue).trim(),
+              address: `Property ${apnValue}` // Fallback address - will be updated by Regrid API
             }
           })
 
-          // Upload in batches to avoid overwhelming the API
-          const batchSize = 10
+          // Check for duplicates first
+          console.log('🔍 Checking for duplicate APNs before upload...')
+          const duplicateChecks = await Promise.all(
+            properties.map(async (prop, index) => {
+              try {
+                const response = await fetch(`/api/user-properties/check-apn?apn=${encodeURIComponent(prop.apn)}`)
+                const result = await response.json()
+                return {
+                  index,
+                  apn: prop.apn,
+                  isDuplicate: !!result.exists,
+                  existingProperty: result.property
+                }
+              } catch (error) {
+                console.warn(`Failed to check duplicate for APN ${prop.apn}:`, error)
+                return {
+                  index,
+                  apn: prop.apn, 
+                  isDuplicate: false,
+                  existingProperty: null
+                }
+              }
+            })
+          )
+
+          // Filter out duplicates and create a report
+          const duplicates = duplicateChecks.filter(check => check.isDuplicate)
+          const uniqueProperties = properties.filter((_, index) => 
+            !duplicateChecks[index].isDuplicate
+          )
+
+          console.log(`📊 Duplicate check results: ${duplicates.length} duplicates, ${uniqueProperties.length} unique`)
+
+          // Upload unique properties in batches
+          const batchSize = 5 // Reduced batch size for more granular progress
           const results = []
           const errors = []
 
-          for (let i = 0; i < properties.length; i += batchSize) {
-            const batch = properties.slice(i, i + batchSize)
-            setUploadProgress((i / properties.length) * 100)
+          // Add duplicate errors to the error list
+          duplicates.forEach(dup => {
+            errors.push({
+              apn: dup.apn,
+              error: `APN ${dup.apn} already exists in your portfolio`,
+              type: 'duplicate'
+            })
+          })
+
+          for (let i = 0; i < uniqueProperties.length; i += batchSize) {
+            const batch = uniqueProperties.slice(i, i + batchSize)
+            const progress = ((i + duplicates.length) / properties.length) * 100
+            setUploadProgress(progress)
 
             try {
               const response = await fetch('/api/user-properties', {
@@ -180,9 +234,12 @@ export function CSVUpload() {
               errors.push(...result.errors)
             } catch (error) {
               console.error('Batch upload error:', error)
-              errors.push({
-                batch: i / batchSize + 1,
-                error: error instanceof Error ? error.message : 'Unknown error'
+              batch.forEach(prop => {
+                errors.push({
+                  apn: prop.apn,
+                  error: error instanceof Error ? error.message : 'Unknown error',
+                  type: 'upload_error'
+                })
               })
             }
           }
@@ -273,7 +330,7 @@ export function CSVUpload() {
           className="mt-1"
         />
         <p className="text-sm text-muted-foreground mt-1">
-          Support formats: APN column, or Address/City/State columns
+          CSV file must contain an APN column (apn, parcel, parcelnumber, etc.)
         </p>
       </div>
 
