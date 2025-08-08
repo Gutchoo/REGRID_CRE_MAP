@@ -7,7 +7,7 @@ A full-stack web application for managing real estate properties with interactiv
 ### ✅ Phase 1 - Foundation (Completed)
 - **Next.js 14** with TypeScript and App Router
 - **Dark theme** with Shadcn/ui components and Tailwind CSS
-- **Authentication** with Clerk (sign-up, sign-in, user management)
+- **Authentication** with Supabase Auth (sign-up, sign-in, user management)
 - **Database** with Supabase and Row Level Security
 - **Responsive layout** with navigation and user controls
 
@@ -34,7 +34,7 @@ A full-stack web application for managing real estate properties with interactiv
 
 - **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
 - **UI Components**: Shadcn/ui with dark mode
-- **Authentication**: Clerk
+- **Authentication**: Supabase Auth
 - **Database**: Supabase with PostgreSQL
 - **APIs**: Regrid for property data
 - **Maps**: Mapbox GL JS (planned)
@@ -51,8 +51,7 @@ A full-stack web application for managing real estate properties with interactiv
    ```
 
    Required services:
-   - **Clerk** (Authentication): Get keys from [clerk.dev](https://clerk.dev)
-   - **Supabase** (Database): Create project at [supabase.com](https://supabase.com)
+   - **Supabase** (Authentication & Database): Create project at [supabase.com](https://supabase.com)
    - **Regrid API** (Property data): Get API key from [regrid.com](https://regrid.com)
 
 2. **Database Setup**
@@ -112,7 +111,7 @@ src/
 ## 🔐 Security Features
 
 - Row Level Security (RLS) ensures users only see their data
-- API routes protected with Clerk authentication middleware
+- API routes protected with Supabase authentication middleware
 - Input validation with Zod schemas
 - Secure API key management via environment variables
 
@@ -129,7 +128,7 @@ npm run lint         # Run ESLint
 
 **Phase 1 & 2 Complete** - The application is ready for property uploads and basic management. Users can:
 
-- Sign up and authenticate securely
+- Sign up and authenticate securely with Supabase Auth
 - Upload properties via CSV files (APN or address format)
 - Manually add properties by APN with automatic data lookup
 - Search and add properties by address with autocomplete
