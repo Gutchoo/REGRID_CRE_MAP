@@ -4,6 +4,12 @@ import { DatabaseService } from '@/lib/db'
 import { RegridService, type RegridProperty } from '@/lib/regrid'
 import { z } from 'zod'
 
+// Utility function to clean APN by removing all dashes
+function cleanAPN(apn: string | null | undefined): string | null {
+  if (!apn) return null
+  return apn.replace(/-/g, '')
+}
+
 const createPropertySchema = z.object({
   regrid_id: z.union([z.string(), z.number()]).optional().transform(val => val ? String(val) : undefined),
   apn: z.string().optional(),
@@ -127,8 +133,8 @@ async function handleSingleCreate(userId: string, body: unknown) {
   // Note: user_id will be automatically set by database DEFAULT auth.uid() 
   console.log('handleSingleCreate - preparing property data')
   const propertyData = {
-    regrid_id: validatedData.regrid_id || null,
-    apn: regridData?.apn || validatedData.apn || null,
+    regrid_id: regridData?.id || null,
+    apn: cleanAPN(regridData?.apn || validatedData.apn),
     address: regridData?.address?.line1 || validatedData.address,
     city: regridData?.address?.city || validatedData.city || null,
     state: regridData?.address?.state || validatedData.state || null,
@@ -252,8 +258,8 @@ async function createSinglePropertyFromInput(userId: string, input: unknown) {
   }
 
   const propertyData = {
-    regrid_id: validatedInput.regrid_id || null,
-    apn: regridData?.apn || validatedInput.apn || null,
+    regrid_id: regridData?.id || null,
+    apn: cleanAPN(regridData?.apn || validatedInput.apn),
     address: regridData?.address?.line1 || validatedInput.address,
     city: regridData?.address?.city || validatedInput.city || null,
     state: regridData?.address?.state || validatedInput.state || null,

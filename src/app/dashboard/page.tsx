@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { PlusIcon, MoreVerticalIcon, TrashIcon } from 'lucide-react'
+import { PlusIcon, MoreVerticalIcon, TrashIcon, RefreshCwIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { Property } from '@/lib/supabase'
@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [refreshingPropertyId, setRefreshingPropertyId] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchProperties() {
@@ -82,6 +83,45 @@ export default function DashboardPage() {
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false)
     setPropertyToDelete(null)
+  }
+
+  const handleRefreshClick = async (property: Property) => {
+    if (!property.apn) {
+      setError('Cannot refresh property: No APN available')
+      return
+    }
+
+    setRefreshingPropertyId(property.id)
+    setError(null)
+
+    try {
+      console.log(`🔄 Refreshing property: ${property.address}`)
+      
+      const response = await fetch(`/api/user-properties/${property.id}/refresh`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to refresh property')
+      }
+
+      const result = await response.json()
+      console.log(`✅ Property refreshed successfully`)
+
+      // Update the property in local state
+      setProperties(prev => 
+        prev.map(p => p.id === property.id ? result.property : p)
+      )
+
+      // Clear any previous errors
+      setError(null)
+    } catch (err) {
+      console.error('Refresh error:', err)
+      setError(err instanceof Error ? err.message : 'Failed to refresh property data')
+    } finally {
+      setRefreshingPropertyId(null)
+    }
   }
 
   const renderContent = () => {
@@ -161,6 +201,14 @@ export default function DashboardPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleRefreshClick(property)}
+                        disabled={refreshingPropertyId === property.id || !property.apn}
+                        className="focus:bg-blue-50"
+                      >
+                        <RefreshCwIcon className={`mr-2 h-4 w-4 ${refreshingPropertyId === property.id ? 'animate-spin' : ''}`} />
+                        {refreshingPropertyId === property.id ? 'Refreshing...' : 'Refresh Data'}
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDeleteClick(property)}
                         className="text-red-600 focus:text-red-600 focus:bg-red-50"

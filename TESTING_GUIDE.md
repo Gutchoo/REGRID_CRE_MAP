@@ -18,6 +18,10 @@ This guide walks through testing each checkpoint of the CSV upload flow for APN-
 628081041      - New test APN #5
 ```
 
+**Note**: All APNs are automatically cleaned (dashes removed) before saving to Supabase. For example:
+- Input: `0254-282-260000` → Stored: `0254282260000`
+- Input: `50-18-31-76` → Stored: `50183176`
+
 ## Testing Checkpoints
 
 ### Checkpoint 1: CSV File Upload & Validation
