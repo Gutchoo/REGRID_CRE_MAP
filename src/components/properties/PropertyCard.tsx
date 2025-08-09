@@ -65,10 +65,6 @@ export function PropertyCard({
     return value.toLocaleString()
   }
 
-  const formatAcres = (acres: number | null) => {
-    if (!acres) return null
-    return `${acres.toFixed(2)} acres`
-  }
 
   return (
     <Card className="transition-all duration-200 hover:shadow-md">
@@ -149,32 +145,30 @@ export function PropertyCard({
         
         {/* Quick Stats - Always Visible */}
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {property.assessed_value && (
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Assessed Value</p>
-              <p className="text-sm font-medium">{formatCurrency(property.assessed_value)}</p>
-            </div>
-          )}
-          {property.owner && (
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Owner</p>
-              <p className="text-sm font-medium truncate" title={property.owner}>
-                {property.owner}
-              </p>
-            </div>
-          )}
-          {property.last_sale_price && property.last_sale_price > 0 && (
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Last Sale</p>
-              <p className="text-sm font-medium">{formatCurrency(property.last_sale_price)}</p>
-            </div>
-          )}
-          {property.apn && (
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">APN</p>
-              <p className="text-sm font-medium font-mono">{property.apn}</p>
-            </div>
-          )}
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">Assessed Value</p>
+            <p className="text-sm font-medium">
+              {formatCurrency(property.assessed_value) || 'N/A'}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">Owner</p>
+            <p className="text-sm font-medium truncate" title={property.owner || 'N/A'}>
+              {property.owner || 'N/A'}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">Last Sale</p>
+            <p className="text-sm font-medium">
+              {(property.last_sale_price && property.last_sale_price > 0) 
+                ? formatCurrency(property.last_sale_price) 
+                : 'N/A'}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">APN</p>
+            <p className="text-sm font-medium font-mono">{property.apn || 'N/A'}</p>
+          </div>
         </div>
       </div>
 
@@ -270,8 +264,8 @@ export function PropertyCard({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   {property.lot_size_acres && (
                     <div>
-                      <p className="text-muted-foreground">Lot Size</p>
-                      <p className="font-medium">{formatAcres(property.lot_size_acres)}</p>
+                      <p className="text-muted-foreground">Lot Size (Acres)</p>
+                      <p className="font-medium">{property.lot_size_acres.toFixed(2)}</p>
                     </div>
                   )}
                   {property.lot_size_sqft && (

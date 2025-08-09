@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { PropertyViewToggle } from './PropertyViewToggle'
 import { PropertyCardView } from './PropertyCardView'
 import { PropertyTableView } from './PropertyTableView'
 import { BulkActionBar } from './BulkActionBar'
+import { SearchBar } from './SearchBar'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,9 @@ export function PropertyView({ properties, onPropertiesChange, onError }: Proper
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
   
   // Action states
   const [refreshingPropertyId, setRefreshingPropertyId] = useState<string | null>(null)
@@ -57,6 +61,43 @@ export function PropertyView({ properties, onPropertiesChange, onError }: Proper
     setSelectedRows(new Set())
   }
 
+  // Multi-field search algorithm
+  const searchInProperty = (property: Property, query: string): boolean => {
+    if (!query.trim()) return true
+    
+    const lowerQuery = query.toLowerCase().trim()
+    const searchableFields = [
+      property.address,
+      property.city,
+      property.state, 
+      property.zip_code,
+      property.owner,
+      property.apn,
+      property.county,
+      property.zoning,
+      property.use_description,
+      property.subdivision,
+      property.use_code,
+      property.zoning_description
+    ]
+    
+    return searchableFields.some(field => 
+      field?.toLowerCase().includes(lowerQuery)
+    )
+  }
+
+  // Filter properties based on search query
+  const filteredProperties = useMemo(() => {
+    return properties.filter(property => searchInProperty(property, searchQuery))
+  }, [properties, searchQuery])
+
+  // Handle search query change
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query)
+    // Clear selections when search changes
+    setSelectedRows(new Set())
+  }
+
   // Card expansion
   const handleToggleExpand = (id: string) => {
     const newExpanded = new Set(expandedCards)
@@ -81,7 +122,7 @@ export function PropertyView({ properties, onPropertiesChange, onError }: Proper
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      setSelectedRows(new Set(properties.map(p => p.id)))
+      setSelectedRows(new Set(filteredProperties.map(p => p.id)))
     } else {
       setSelectedRows(new Set())
     }
@@ -161,7 +202,7 @@ export function PropertyView({ properties, onPropertiesChange, onError }: Proper
   // Bulk operations
   const handleBulkRefresh = async () => {
     setBulkProcessing(true)
-    const selectedProperties = properties.filter(p => selectedRows.has(p.id))
+    const selectedProperties = filteredProperties.filter(p => selectedRows.has(p.id))
     let successCount = 0
     let errorCount = 0
 
@@ -202,7 +243,7 @@ export function PropertyView({ properties, onPropertiesChange, onError }: Proper
       const successful = results.filter(r => r.status === 'fulfilled').length
       const failed = results.length - successful
 
-      // Remove successfully deleted properties
+      // Remove successfully deleted properties from all properties
       const updatedProperties = properties.filter(p => !selectedIds.includes(p.id))
       onPropertiesChange(updatedProperties)
       
@@ -225,20 +266,44 @@ export function PropertyView({ properties, onPropertiesChange, onError }: Proper
 
   return (
     <div className="space-y-6">
+      {/* Search Bar */}
+      <SearchBar
+        onSearchChange={handleSearchChange}
+        resultsCount={filteredProperties.length}
+        totalCount={properties.length}
+      />
+
       {/* View Toggle */}
       <div className="flex justify-between items-center">
         <PropertyViewToggle currentView={viewMode} onViewChange={handleViewChange} />
         {viewMode === 'table' && selectedRows.size > 0 && (
           <div className="text-sm text-muted-foreground">
-            {selectedRows.size} of {properties.length} selected
+            {selectedRows.size} of {filteredProperties.length} selected
           </div>
         )}
       </div>
 
       {/* Content */}
-      {viewMode === 'cards' ? (
+      {filteredProperties.length === 0 && searchQuery.trim().length > 0 ? (
+        <div className="text-center py-12">
+          <div className="mx-auto h-24 w-24 rounded-full bg-muted flex items-center justify-center mb-4">
+            <span className="text-2xl">🔍</span>
+          </div>
+          <h3 className="text-lg font-medium mb-2">No properties found</h3>
+          <p className="text-muted-foreground">
+            Try adjusting your search terms or{' '}
+            <button 
+              onClick={() => handleSearchChange('')}
+              className="text-primary hover:underline"
+            >
+              clear the search
+            </button>{' '}
+            to see all properties.
+          </p>
+        </div>
+      ) : viewMode === 'cards' ? (
         <PropertyCardView
-          properties={properties}
+          properties={filteredProperties}
           expandedCards={expandedCards}
           onToggleExpand={handleToggleExpand}
           onRefresh={handleRefreshClick}
@@ -247,7 +312,7 @@ export function PropertyView({ properties, onPropertiesChange, onError }: Proper
         />
       ) : (
         <PropertyTableView
-          properties={properties}
+          properties={filteredProperties}
           selectedRows={selectedRows}
           onRowSelect={handleRowSelect}
           onSelectAll={handleSelectAll}
@@ -258,7 +323,7 @@ export function PropertyView({ properties, onPropertiesChange, onError }: Proper
       )}
 
       {/* Bulk Action Bar */}
-      {viewMode === 'table' && (
+      {viewMode === 'table' && filteredProperties.length > 0 && (
         <BulkActionBar
           selectedCount={selectedRows.size}
           onBulkRefresh={handleBulkRefresh}

@@ -238,7 +238,7 @@ export function PropertyTableView({
               <TableHead className="w-12">
                 <Checkbox
                   checked={allSelected}
-                  indeterminate={someSelected || undefined}
+                  {...(someSelected && { indeterminate: true })}
                   onCheckedChange={(checked) => onSelectAll(!!checked)}
                   aria-label="Select all"
                 />
