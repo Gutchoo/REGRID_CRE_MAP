@@ -223,8 +223,6 @@ export class RegridService {
         zoning: fields.zoning || '',
         zoning_description: fields.zoning_description || '',
         property_type: fields.property_type || '',
-        use_code: fields.usecode || '',
-        use_description: fields.usedesc || '',
         
         // Enhanced fields for database storage
         assessed_value: parseFloat(fields.parval) || undefined, // Total parcel value
@@ -235,7 +233,33 @@ export class RegridService {
         county: fields.county || '',
         qoz_status: fields.qoz || '', // Qualified Opportunity Zone
         
+        // Extended property details
+        use_code: fields.usecode || '',
+        use_description: fields.usedesc || '',
         subdivision: fields.subdivision || '',
+        num_stories: parseInt(fields.numstories) || undefined,
+        num_units: parseInt(fields.numunits) || undefined,
+        num_rooms: parseInt(fields.numrooms) || undefined,
+        
+        // Financial & tax data
+        tax_year: fields.taxyear || '',
+        parcel_value_type: fields.parvaltype || '',
+        
+        // Location data
+        census_tract: fields.census_tract || '',
+        census_block: fields.census_block || '',
+        qoz_tract: fields.qoz_tract || '',
+        
+        // Data freshness tracking
+        last_refresh_date: fields.ll_last_refresh || '',
+        regrid_updated_at: fields.ll_updated_at || '',
+        
+        // Owner mailing address
+        owner_mailing_address: fields.mailadd || '',
+        owner_mail_city: fields.mail_city || '',
+        owner_mail_state: fields.mail_state2 || '',
+        owner_mail_zip: fields.mail_zip || '',
+        
         qualified_opportunity_zone: fields.qoz || '',
         // Store all raw fields for future use
         ...fields

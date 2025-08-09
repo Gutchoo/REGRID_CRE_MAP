@@ -91,6 +91,37 @@ export async function POST(
       land_value: regridData.properties?.land_value || existingProperty.land_value,
       assessed_value: regridData.properties?.assessed_value || existingProperty.assessed_value,
       
+      // Extended property details from Regrid API
+      use_code: regridData.properties?.use_code || existingProperty.use_code,
+      use_description: regridData.properties?.use_description || existingProperty.use_description,
+      zoning: regridData.properties?.zoning || existingProperty.zoning,
+      zoning_description: regridData.properties?.zoning_description || existingProperty.zoning_description,
+      num_stories: regridData.properties?.num_stories || existingProperty.num_stories,
+      num_units: regridData.properties?.num_units || existingProperty.num_units,
+      num_rooms: regridData.properties?.num_rooms || existingProperty.num_rooms,
+      subdivision: regridData.properties?.subdivision || existingProperty.subdivision,
+      lot_size_acres: regridData.properties?.lot_acres || existingProperty.lot_size_acres,
+      lot_size_sqft: regridData.properties?.lot_size_sqft || existingProperty.lot_size_sqft,
+      
+      // Financial & tax data
+      tax_year: regridData.properties?.tax_year || existingProperty.tax_year,
+      parcel_value_type: regridData.properties?.parcel_value_type || existingProperty.parcel_value_type,
+      
+      // Location data
+      census_tract: regridData.properties?.census_tract || existingProperty.census_tract,
+      census_block: regridData.properties?.census_block || existingProperty.census_block,
+      qoz_tract: regridData.properties?.qoz_tract || existingProperty.qoz_tract,
+      
+      // Data freshness tracking
+      last_refresh_date: regridData.properties?.last_refresh_date || existingProperty.last_refresh_date,
+      regrid_updated_at: regridData.properties?.regrid_updated_at || existingProperty.regrid_updated_at,
+      
+      // Owner mailing address
+      owner_mailing_address: regridData.properties?.owner_mailing_address || existingProperty.owner_mailing_address,
+      owner_mail_city: regridData.properties?.owner_mail_city || existingProperty.owner_mail_city,
+      owner_mail_state: regridData.properties?.owner_mail_state || existingProperty.owner_mail_state,
+      owner_mail_zip: regridData.properties?.owner_mail_zip || existingProperty.owner_mail_zip,
+      
       // Store fresh full Regrid API response
       property_data: regridData || existingProperty.property_data,
       

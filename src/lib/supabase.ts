@@ -43,6 +43,37 @@ export type Property = {
   land_value: number | null
   assessed_value: number | null
   
+  // Extended property details
+  use_code: string | null // Property use code
+  use_description: string | null // Use description  
+  zoning: string | null // Zoning code
+  zoning_description: string | null // Full zoning description
+  num_stories: number | null // Number of stories
+  num_units: number | null // Number of units
+  num_rooms: number | null // Number of rooms
+  subdivision: string | null // Subdivision name
+  lot_size_acres: number | null // Lot size in acres
+  lot_size_sqft: number | null // Lot size in square feet
+  
+  // Financial & tax data
+  tax_year: string | null // Tax assessment year
+  parcel_value_type: string | null // Type of parcel value
+  
+  // Location data
+  census_tract: string | null // Census tract identifier
+  census_block: string | null // Census block identifier
+  qoz_tract: string | null // QOZ tract number
+  
+  // Data freshness tracking
+  last_refresh_date: string | null // When Regrid data was last refreshed (ISO date)
+  regrid_updated_at: string | null // When Regrid last updated the data (ISO datetime)
+  
+  // Owner mailing address
+  owner_mailing_address: string | null // Owner's mailing address
+  owner_mail_city: string | null // Owner's mailing city
+  owner_mail_state: string | null // Owner's mailing state
+  owner_mail_zip: string | null // Owner's mailing zip
+  
   property_data: Record<string, unknown> | null // Regrid response data
   user_notes: string | null
   tags: string[] | null

@@ -26,6 +26,37 @@ CREATE TABLE properties (
   land_value DECIMAL(12, 2),
   assessed_value DECIMAL(12, 2),
   
+  -- Extended property details
+  use_code TEXT, -- Property use code (e.g., "531", "8540")
+  use_description TEXT, -- Use description (e.g., "PUD", "TH DEFAULT CODE")
+  zoning TEXT, -- Zoning code (e.g., "CHCCSP", "PAD")
+  zoning_description TEXT, -- Full zoning description
+  num_stories INTEGER, -- Number of stories
+  num_units INTEGER, -- Number of units
+  num_rooms INTEGER, -- Number of rooms
+  subdivision TEXT, -- Subdivision name
+  lot_size_acres DECIMAL(10, 4), -- Lot size in acres
+  lot_size_sqft INTEGER, -- Lot size in square feet
+  
+  -- Financial & tax data
+  tax_year TEXT, -- Tax assessment year
+  parcel_value_type TEXT, -- Type of parcel value (e.g., "FULL MARKET")
+  
+  -- Location data
+  census_tract TEXT, -- Census tract identifier
+  census_block TEXT, -- Census block identifier
+  qoz_tract TEXT, -- QOZ tract number (when applicable)
+  
+  -- Data freshness tracking
+  last_refresh_date DATE, -- When Regrid data was last refreshed
+  regrid_updated_at TIMESTAMP WITH TIME ZONE, -- When Regrid last updated the data
+  
+  -- Owner mailing address
+  owner_mailing_address TEXT, -- Owner's mailing address
+  owner_mail_city TEXT, -- Owner's mailing city
+  owner_mail_state TEXT, -- Owner's mailing state
+  owner_mail_zip TEXT, -- Owner's mailing zip
+  
   property_data JSONB, -- Store full Regrid API response
   user_notes TEXT,
   tags TEXT[],
@@ -76,6 +107,14 @@ CREATE INDEX idx_properties_county ON properties(county);
 CREATE INDEX idx_properties_year_built ON properties(year_built);
 CREATE INDEX idx_properties_owner ON properties(owner);
 CREATE INDEX idx_properties_qoz_status ON properties(qoz_status);
+
+-- Indexes for new extended fields
+CREATE INDEX idx_properties_zoning ON properties(zoning);
+CREATE INDEX idx_properties_use_code ON properties(use_code);
+CREATE INDEX idx_properties_subdivision ON properties(subdivision);
+CREATE INDEX idx_properties_last_refresh_date ON properties(last_refresh_date);
+CREATE INDEX idx_properties_census_tract ON properties(census_tract);
+CREATE INDEX idx_properties_zip_code ON properties(zip_code);
 
 -- 🔍 Address search helper function (with proper UUID handling)
 CREATE OR REPLACE FUNCTION search_properties_by_address(search_term TEXT, user_id_param UUID)

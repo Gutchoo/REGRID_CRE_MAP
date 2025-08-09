@@ -154,6 +154,37 @@ async function handleSingleCreate(userId: string, body: unknown) {
     land_value: regridData?.properties?.land_value || null,
     assessed_value: regridData?.properties?.assessed_value || null,
     
+    // Extended property details from Regrid API
+    use_code: regridData?.properties?.use_code || null,
+    use_description: regridData?.properties?.use_description || null,
+    zoning: regridData?.properties?.zoning || null,
+    zoning_description: regridData?.properties?.zoning_description || null,
+    num_stories: regridData?.properties?.num_stories || null,
+    num_units: regridData?.properties?.num_units || null,
+    num_rooms: regridData?.properties?.num_rooms || null,
+    subdivision: regridData?.properties?.subdivision || null,
+    lot_size_acres: regridData?.properties?.lot_acres || null,
+    lot_size_sqft: regridData?.properties?.lot_size_sqft || null,
+    
+    // Financial & tax data
+    tax_year: regridData?.properties?.tax_year || null,
+    parcel_value_type: regridData?.properties?.parcel_value_type || null,
+    
+    // Location data
+    census_tract: regridData?.properties?.census_tract || null,
+    census_block: regridData?.properties?.census_block || null,
+    qoz_tract: regridData?.properties?.qoz_tract || null,
+    
+    // Data freshness tracking
+    last_refresh_date: regridData?.properties?.last_refresh_date || null,
+    regrid_updated_at: regridData?.properties?.regrid_updated_at || null,
+    
+    // Owner mailing address
+    owner_mailing_address: regridData?.properties?.owner_mailing_address || null,
+    owner_mail_city: regridData?.properties?.owner_mail_city || null,
+    owner_mail_state: regridData?.properties?.owner_mail_state || null,
+    owner_mail_zip: regridData?.properties?.owner_mail_zip || null,
+    
     property_data: regridData || null,
     user_notes: validatedData.user_notes || null,
     tags: validatedData.tags || null,
@@ -278,6 +309,37 @@ async function createSinglePropertyFromInput(userId: string, input: unknown) {
     improvement_value: regridData?.properties?.improvement_value || null,
     land_value: regridData?.properties?.land_value || null,
     assessed_value: regridData?.properties?.assessed_value || null,
+    
+    // Extended property details from Regrid API
+    use_code: regridData?.properties?.use_code || null,
+    use_description: regridData?.properties?.use_description || null,
+    zoning: regridData?.properties?.zoning || null,
+    zoning_description: regridData?.properties?.zoning_description || null,
+    num_stories: regridData?.properties?.num_stories || null,
+    num_units: regridData?.properties?.num_units || null,
+    num_rooms: regridData?.properties?.num_rooms || null,
+    subdivision: regridData?.properties?.subdivision || null,
+    lot_size_acres: regridData?.properties?.lot_acres || null,
+    lot_size_sqft: regridData?.properties?.lot_size_sqft || null,
+    
+    // Financial & tax data
+    tax_year: regridData?.properties?.tax_year || null,
+    parcel_value_type: regridData?.properties?.parcel_value_type || null,
+    
+    // Location data
+    census_tract: regridData?.properties?.census_tract || null,
+    census_block: regridData?.properties?.census_block || null,
+    qoz_tract: regridData?.properties?.qoz_tract || null,
+    
+    // Data freshness tracking
+    last_refresh_date: regridData?.properties?.last_refresh_date || null,
+    regrid_updated_at: regridData?.properties?.regrid_updated_at || null,
+    
+    // Owner mailing address
+    owner_mailing_address: regridData?.properties?.owner_mailing_address || null,
+    owner_mail_city: regridData?.properties?.owner_mail_city || null,
+    owner_mail_state: regridData?.properties?.owner_mail_state || null,
+    owner_mail_zip: regridData?.properties?.owner_mail_zip || null,
     
     property_data: regridData || null,
     user_notes: validatedInput.user_notes || null,
